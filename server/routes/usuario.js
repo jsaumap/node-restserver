@@ -2,7 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const _ = require('lodash');
 
-const Usuario = require('../models/usuario')
+const Usuario = require('../models/usuario');
+const { verificationToken } = require('../middleware/auth');
 
 const app = express();
 
@@ -13,12 +14,14 @@ app.get('/', (req, res) => {
   res.json('Hello World');
 });
 
-app.get('/usuario', (req, res) => {
+app.get('/usuario', verificationToken, (req, res) => {
 
   let desde = Number(req.query.desde) || 0;
   let limite = Number(req.query.limite) || 10;
 
-  Usuario.find({estado: true}, 'nombre email role estado google img')
+  Usuario.find({
+    estado: true
+  }, 'nombre email role estado google img')
     .skip(desde)
     .limit(limite)
     .exec((err, usuarios) => {
@@ -30,7 +33,9 @@ app.get('/usuario', (req, res) => {
         })
       }
 
-      Usuario.count({estado: true}, (err, total) =>{
+      Usuario.count({
+        estado: true
+      }, (err, total) => {
         res.json({
           ok: true,
           total,
@@ -42,7 +47,7 @@ app.get('/usuario', (req, res) => {
 
 });
 
-app.post('/usuario', (req, res) => {
+app.post('/usuario', verificationToken, (req, res) => {
 
   let body = req.body;
 
@@ -53,7 +58,7 @@ app.post('/usuario', (req, res) => {
     role: body.role
   });
 
-  usuario.save( (err, usuarioDB) => {
+  usuario.save((err, usuarioDB) => {
 
     if (err) {
       return res.status(400).json({
@@ -61,7 +66,7 @@ app.post('/usuario', (req, res) => {
         err
       })
     }
-    let us = _.pick(usuarioDB, ['nombre','email','img','role','estado']);
+    let us = _.pick(usuarioDB, ['nombre', 'email', 'img', 'role', 'estado']);
     res.json({
       ok: true,
       usuario: us
@@ -70,12 +75,15 @@ app.post('/usuario', (req, res) => {
 
 });
 
-app.put('/usuario/:id', (req, res) => {
+app.put('/usuario/:id', verificationToken, (req, res) => {
 
   let id = req.params.id;
-  let body =req.body;
+  let body = req.body;
 
-  Usuario.findByIdAndUpdate(id, body, { new: true, runValidators: true }, (err, usuarioDB) => {
+  Usuario.findByIdAndUpdate(id, body, {
+    new: true,
+    runValidators: true
+  }, (err, usuarioDB) => {
 
     if (err) {
       return res.status(400).json({
@@ -83,7 +91,7 @@ app.put('/usuario/:id', (req, res) => {
         err
       });
     }
-    res.json ({
+    res.json({
       usuarioDB
     });
   });
@@ -91,12 +99,16 @@ app.put('/usuario/:id', (req, res) => {
 })
 
 
-app.delete('/usuario/:id', (req, res) => {
+app.delete('/usuario/:id', verificationToken, (req, res) => {
 
   let id = req.params.id;
 
   // Usuario.findByIdAndRemove(id, (err, usuarioBorrado) => {
-  Usuario.findByIdAndUpdate(id, { estado: false }, { new: true },(err, usuarioBorrado) => {
+  Usuario.findByIdAndUpdate(id, {
+    estado: false
+  }, {
+    new: true
+  }, (err, usuarioBorrado) => {
 
     if (err) {
       return res.status(400).json({
@@ -112,7 +124,7 @@ app.delete('/usuario/:id', (req, res) => {
         }
       });
     }
-    res.json ({
+    res.json({
       ok: true,
       usuario: usuarioBorrado
     });
